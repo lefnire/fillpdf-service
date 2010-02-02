@@ -1,12 +1,9 @@
 class FillpdfController {
 
-//    def index = { }
+    def index = { }
+
+    // XML-RPC 
     def fillpdfService
-
-    def test = {
-        render "test"
-    }
-
     def xmlrpc = {
         response.setContentType('text/xml')
         fillpdfService.service(request, response)

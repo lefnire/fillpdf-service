@@ -17,7 +17,15 @@ class FillpdfService extends Xmlrpc{
 
     static final def mapping = [ 'fillpdf_xmlrpc.parsePdf' : 'parsePdf', 'fillpdf_xmlrpc.mergePdf' : 'mergePdf' ]
 
-
+//    private boolean verifyLicense(licenseKey) {
+//        def license = FillpdfLicense.findByLicenseKey(Base64.decode(licenseKey))
+//        if(lincense.maxUses<=license.numUses)
+//        if(!license)
+//            return false
+//        license.numUses++
+//        license.save()
+//        return true
+//    }
     /**
      * This function takes a data string representing the PDF document and parses its Acro
      * 	Form Fields, returning its results as an XML documents.
@@ -28,6 +36,9 @@ class FillpdfService extends Xmlrpc{
      * 		fields in the original PDF document).
      */
     def parsePdf(params){
+//        if(!verifyLicense(params[1]))
+//            return "auth_error"
+
         String pdf_data = params[0]
         String xml=new String("<fields>")
 
@@ -90,6 +101,9 @@ class FillpdfService extends Xmlrpc{
      * 	Byte64-decode on the client)
      */
     def mergePdf(params){
+//        if(!verifyLicense(params[2]))
+//            return "auth_error"
+
         String pdf_data = params[0]
         String xfdf_data = params[1]
            try{

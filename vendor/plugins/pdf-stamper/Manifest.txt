@@ -1,0 +1,11 @@
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+ext/iText-2.1.4.jar
+lib/pdf/stamper.rb
+lib/pdf/stamper/jruby.rb
+lib/pdf/stamper/rjb.rb
+spec/logo.gif
+spec/pdf_stamper_spec.rb
+spec/test_template.pdf

@@ -1,4 +1,4 @@
-package fillpdf_grails
+package fillpdf
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;

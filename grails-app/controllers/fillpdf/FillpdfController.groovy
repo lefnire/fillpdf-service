@@ -1,4 +1,4 @@
-package fillpdf_grails
+package fillpdf
 
 class FillpdfController {
 

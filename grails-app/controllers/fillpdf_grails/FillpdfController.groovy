@@ -1,8 +1,10 @@
+package fillpdf_grails
+
 class FillpdfController {
 
-    def index = { }
+   def index = { }
 
-    // XML-RPC 
+    // XML-RPC
     def fillpdfService
     def xmlrpc = {
         response.setContentType('text/xml')

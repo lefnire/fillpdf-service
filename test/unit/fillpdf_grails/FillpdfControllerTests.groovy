@@ -1,6 +1,8 @@
+package fillpdf_grails
+
 import grails.test.*
 
-class FillpdfLicenseTests extends GrailsUnitTestCase {
+class FillpdfControllerTests extends ControllerUnitTestCase {
     protected void setUp() {
         super.setUp()
     }

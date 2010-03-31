@@ -1,3 +1,5 @@
+package fillpdf_grails
+
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,7 +17,7 @@ class FillpdfService extends Xmlrpc{
 //
 //    }
 
-    static final def mapping = [ 'fillpdf_xmlrpc.parsePdf' : 'parsePdf', 'fillpdf_xmlrpc.mergePdf' : 'mergePdf' ]
+    static final def mapping = [ 'parse_pdf' : 'parsePdf', 'merge_pdf' : 'mergePdf' ]
 
 //    private boolean verifyLicense(licenseKey) {
 //        def license = FillpdfLicense.findByLicenseKey(Base64.decode(licenseKey))

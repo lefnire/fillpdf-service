@@ -1,14 +1,10 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.ocdevel;
 
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
 import com.itextpdf.text.pdf.AcroFields;
 import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.XfdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
@@ -18,24 +14,26 @@ import com.itextpdf.text.Rectangle;
  * @author renelle
  */
 
-//# PDF::Stamper provides an interface into iText's PdfStamper allowing for the
-//# editing of existing PDF's as templates. PDF::Stamper is not a PDF generator,
-//# it allows you to edit existing PDF's and use them as templates.
-//#
-//# == Creation of templates
-//#
-//# Templates currently can only be created using Adobe LiveCycle
-//# Designer which comes with the lastest versions of Adobe Acrobat
-//# Professional.  Using LiveCycle Designer you can create a form and
-//# add textfield's for text and button's for images.
-//#
-//# == Example
-//#
-//# pdf = PDF::Stamper.new("my_template.pdf")
-//# pdf.text :first_name, "Jason"
-//# pdf.text :last_name, "Yates"
-//# pdf.image :photo, "photo.jpg"
-//# pdf.save_as "my_output"
+/**
+ *  PDF::Stamper provides an interface into iText's PdfStamper allowing for the
+ *  editing of existing PDF's as templates. PDF::Stamper is not a PDF generator,
+ *  it allows you to edit existing PDF's and use them as templates.
+ *
+ *  == Creation of templates
+ *
+ *  Templates currently can only be created using Adobe LiveCycle
+ *  Designer which comes with the lastest versions of Adobe Acrobat
+ *  Professional.  Using LiveCycle Designer you can create a form and
+ *  add textfield's for text and button's for images.
+ *
+ *  == Example
+ *
+ *  pdf = PDF::Stamper.new("my_template.pdf")
+ *  pdf.text :first_name, "Jason"
+ *  pdf.text :last_name, "Yates"
+ *  pdf.image :photo, "photo.jpg"
+ *  pdf.save_as "my_output"
+ */
 public class FillpdfService{
   ByteArrayOutputStream baos  = null;
   PdfStamper stamp            = null;
@@ -43,25 +41,23 @@ public class FillpdfService{
 
 
   public FillpdfService(String pdf, String type){
-    if(type.equals("file")){
-      template(pdf);
-    }
+    PdfReader reader = null;
+
+    /*NOTE I'd rather use a ByteArrayOutputStream.  However I
+      couldn't get it working.  Patches welcome. */
+    //@tmp_path = File.join(Dir::tmpdir,  'pdf-stamper-' + rand(10000).to_s + '.pdf')
+    try{
+      if(type.equals("file")){
+        reader = new PdfReader(pdf);
+      }else{
+       reader = new PdfReader(pdf.getBytes());
+      }
+      this.baos = new ByteArrayOutputStream();
+      this.stamp = new PdfStamper(reader, this.baos); //FileOutputStream.new(@tmp_path))
+      this.form = this.stamp.getAcroFields();
+    }catch(Exception e){ e.printStackTrace();}
   }
 
-    public void template(String template){
-      /*NOTE I'd rather use a ByteArrayOutputStream.  However I
-        couldn't get it working.  Patches welcome. */
-      //@tmp_path = File.join(Dir::tmpdir,  'pdf-stamper-' + rand(10000).to_s + '.pdf')
-      PdfReader reader = null;
-      try{
-        reader = new PdfReader(template);
-        this.baos = new ByteArrayOutputStream();
-        this.stamp = new PdfStamper(reader, this.baos); //FileOutputStream.new(@tmp_path))
-        this.form = this.stamp.getAcroFields();
-      }catch(Exception e){ e.printStackTrace();}
-      //@@TODO: Proper exception handling
-      
-}
 //
 //    # Set a button field defined by key and replaces with an image.
 //    def image(key, image_path)
@@ -81,17 +77,24 @@ public class FillpdfService{
 //      cb.addImage(img)
 //    end
 //
-//    # Takes the PDF output and sends as a string.  Basically it's sole
-//    # purpose is to be used with send_data in rails.
-//    def to_s
-//      fill
+    /**
+     * Takes the PDF output and sends as a string.  Basically it's sole
+     * purpose is to be used with send_data in rails.
+     */
+    public String toString(){
+      this.fill();
 //      String.from_java_bytes(@baos.toByteArray)
-//    end
+      return this.baos.toString();
+    }
 
-//   # Set a textfield defined by key and text to value.
-//    def text(key, value)
-//      @form.setField(key.to_s, value.to_s) # Value must be a string or itext will error.
-//    end
+    /**
+     * Set a textfield defined by key and text to value.
+     */
+    public void text(String key, String value){
+      try{
+        this.form.setField(key, value); // Value must be a string or itext will error.
+      }catch(Exception e){e.printStackTrace();}
+    }
 //
 //    # Saves the PDF into a file defined by path given.
 //    def save_as(file)
@@ -101,31 +104,17 @@ public class FillpdfService{
 //
 //    private
 //
-//    def fill
-//      @stamp.setFormFlattening(true)
-//      @stamp.close
-//    end
+    private void fill(){
+      try{
+        this.stamp.setFormFlattening(true);
+        this.stamp.close();
+      }catch(Exception e){e.printStackTrace();}
+    }
 
 
 
 
 
-
-//    def initialize(pdf = nil, options = {})
-//      @treemap = Rjb::import('java.util.TreeMap')
-//      @xfdfreader = Rjb::import('com.itextpdf.text.pdf.XfdfReader')
-//
-//      if(options['from']=='file')
-//        super(pdf)
-//      else
-//        super() # make sure null-arg constructor
-//        reader = @pdfreader.new_with_sig("[B", pdf)
-//        @baos = @bytearray.new
-//        @stamp = @pdfstamper.new(reader, @baos)
-//        @form = @stamp.getAcroFields()
-//      end
-//    end
-//
 //    def parse
 //      arr = []
 //      fields = @form.getFields()
@@ -172,10 +161,17 @@ public class FillpdfService{
 //      xml += "</fields>"
 //    end
 //
-//    def merge(xfdf)
-//      xfdfreader = @xfdfreader.new_with_sig("[B", xfdf)
-//      @form.setFields(xfdfreader)
-//    end
+    public void merge(String xfdf, String type){
+      try{
+        XfdfReader xfdfreader = null;
+        if(type.equals("file")){
+          xfdfreader = new XfdfReader(xfdf);
+        }else{
+          xfdfreader = new XfdfReader(xfdf.getBytes());
+        }
+        this.form.setFields(xfdfreader);
+      }catch(Exception e){e.printStackTrace();}
+    }
 //
 //    # Set a button field defined by key and replaces with an image.
 //    def image_bytes(key, image_bytes)

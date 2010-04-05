@@ -1,11 +1,13 @@
 package com.ocdevel;
 
+import com.itextpdf.text.BadElementException;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import com.itextpdf.text.pdf.AcroFields;
 import com.itextpdf.text.pdf.PdfReader;
@@ -15,8 +17,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.codec.Base64;
 import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.*;
-import java.net.MalformedURLException;
+import com.itextpdf.text.pdf.PdfContentByte;
 
 /**
  *
@@ -69,7 +70,7 @@ public class FillpdfService{
       if(type.equals("file")){
         reader = new PdfReader(pdf);
       }else{
-        reader = new PdfReader(pdf.getBytes());
+        reader = new PdfReader(Base64.decode(pdf));
       }
       this.baos = new ByteArrayOutputStream();
       this.stamp = new PdfStamper(reader, this.baos); //FileOutputStream.new(@tmp_path))
@@ -81,34 +82,13 @@ public class FillpdfService{
 
 
     /**
-     * Set a button field defined by key and replaces with an image.
-     */
-    public void image(String key, String image_path)
-      throws BadElementException, MalformedURLException, IOException{
-      // Idea from here http://itext.ugent.be/library/question.php?id=31
-      // Thanks Bruno for letting me know about it.
-      Image img = Image.getInstance(image_path);
-      float[] img_field = this.form.getFieldPositions(key);
-
-      Rectangle rect = new Rectangle(img_field[1], img_field[2], img_field[3], img_field[4]);
-      img.scaleToFit(rect.getWidth(), rect.getHeight());
-      img.setAbsolutePosition( 
-        (img_field[1] + (rect.getWidth()) - img.getScaledWidth()) / 2),
-        (img_field[2] + (rect.getHeight() - img.getScaledHeight()) /2)
-      );
-
-      cb = @stamp.getOverContent(img_field[0].to_i)
-      cb.addImage(img)
-    }
-
-    /**
      * Takes the PDF output and sends as a string.  Basically it's sole
      * purpose is to be used with send_data in rails.
      */
     @Override
     public String toString(){
       this.fill();
-      return Base64.encodeBytes(baos.toByteArray());     
+      return Base64.encodeBytes(baos.toByteArray());
     }
 
     /**
@@ -210,25 +190,31 @@ public class FillpdfService{
       }
       this.form.setFields(xfdfreader);
     }
-//
-//    # Set a button field defined by key and replaces with an image.
-//    def image_bytes(key, image_bytes)
-//      # Idea from here http://itext.ugent.be/library/question.php?id=31
-//      # Thanks Bruno for letting me know about it.
-//      image = Rjb::import('com.itextpdf.text.Image')
-//  #      img = image.getInstance(image_path)
-//      img = image._invoke('getInstance', '[B', image_bytes)
-//      img_field = @form.getFieldPositions(key.to_s)
-//
-//      rectangle = Rjb::import('com.itextpdf.text.Rectangle')
-//      rect = rectangle.new(img_field[1], img_field[2], img_field[3], img_field[4])
-//      img.scaleToFit(rect.width, rect.height)
-//      img.setAbsolutePosition(
-//        img_field[1] + (rect.width - img.getScaledWidth) / 2,
-//        img_field[2] + (rect.height - img.getScaledHeight) /2
-//      )
-//      cb = @stamp.getOverContent(img_field[0].to_i)
-//      cb.addImage(img)
-//    end
+
+    /**
+     * Set a button field defined by key and replaces with an image.
+     */
+    public void image(String key, String image_path, String type)
+      throws BadElementException, MalformedURLException, IOException, DocumentException{
+      // Idea from here http://itext.ugent.be/library/question.php?id=31
+      // Thanks Bruno for letting me know about it.
+      Image img = null;
+      if(type.equals("file")){
+        img = Image.getInstance(image_path);
+      }else{
+        img = Image.getInstance(image_path.getBytes());
+      }
+      float[] img_field = this.form.getFieldPositions(key);
+
+      Rectangle rect = new Rectangle(img_field[1], img_field[2], img_field[3], img_field[4]);
+      img.scaleToFit(rect.getWidth(), rect.getHeight());
+      img.setAbsolutePosition(
+        (img_field[1] + (rect.getWidth() - img.getScaledWidth()) / 2),
+        (img_field[2] + (rect.getHeight() - img.getScaledHeight()) /2)
+      );
+
+      PdfContentByte cb = this.stamp.getOverContent((int)img_field[0]);
+      cb.addImage(img);
+    }
 
 }

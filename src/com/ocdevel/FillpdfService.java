@@ -1,5 +1,7 @@
 package com.ocdevel;
 
+import java.io.IOException;
+import com.itextpdf.text.DocumentException;
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
 import com.itextpdf.text.pdf.AcroFields;
@@ -8,6 +10,7 @@ import com.itextpdf.text.pdf.XfdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.codec.Base64;
 
 /**
  *
@@ -39,6 +42,16 @@ public class FillpdfService{
   PdfStamper stamp            = null;
   AcroFields form             = null;
 
+  public static void main(String [ ] args){
+
+    FillpdfService svc = new FillpdfService("/Users/lefnire/test_template.pdf", "file");
+    //svc.text("Date of Birth", "test");
+    svc.text("form1[0].#subform[0].text_field01[0]", "test");
+//    System.out.println(svc.toString());
+    svc.saveAs("/Users/lefnire/Downloads/test.pdf");
+  }
+
+
 
   public FillpdfService(String pdf, String type){
     PdfReader reader = null;
@@ -50,12 +63,14 @@ public class FillpdfService{
       if(type.equals("file")){
         reader = new PdfReader(pdf);
       }else{
-       reader = new PdfReader(pdf.getBytes());
+        reader = new PdfReader(pdf.getBytes());
       }
       this.baos = new ByteArrayOutputStream();
       this.stamp = new PdfStamper(reader, this.baos); //FileOutputStream.new(@tmp_path))
       this.form = this.stamp.getAcroFields();
-    }catch(Exception e){ e.printStackTrace();}
+    }
+    catch(IOException e){ e.printStackTrace();}
+    catch(DocumentException d){ d.printStackTrace();}
   }
 
 //
@@ -81,10 +96,10 @@ public class FillpdfService{
      * Takes the PDF output and sends as a string.  Basically it's sole
      * purpose is to be used with send_data in rails.
      */
+    @Override
     public String toString(){
       this.fill();
-//      String.from_java_bytes(@baos.toByteArray)
-      return this.baos.toString();
+      return Base64.encodeBytes(baos.toByteArray());     
     }
 
     /**
@@ -93,22 +108,32 @@ public class FillpdfService{
     public void text(String key, String value){
       try{
         this.form.setField(key, value); // Value must be a string or itext will error.
-      }catch(Exception e){e.printStackTrace();}
+      }
+      catch(IOException e){e.printStackTrace();}
+      catch(DocumentException d){d.printStackTrace();}
     }
-//
-//    # Saves the PDF into a file defined by path given.
-//    def save_as(file)
-//      f = File.new(file, "w")
-//      f.syswrite to_s
-//    end
-//
-//    private
-//
+
+    // Saves the PDF into a file defined by path given.
+    public void saveAs(String file){
+      try{
+        this.fill();
+        FileOutputStream fout = new FileOutputStream(file);
+        this.baos.writeTo(fout);
+        fout.close();
+      }
+      catch(IOException e){e.printStackTrace();}
+
+    }
+
     private void fill(){
       try{
         this.stamp.setFormFlattening(true);
         this.stamp.close();
-      }catch(Exception e){e.printStackTrace();}
+        this.baos.flush();
+      }
+      catch(IOException e){e.printStackTrace();}
+      catch(DocumentException d){d.printStackTrace();}
+
     }
 
 
@@ -160,17 +185,16 @@ public class FillpdfService{
 //      end
 //      xml += "</fields>"
 //    end
-//
-    public void merge(String xfdf, String type){
-      try{
-        XfdfReader xfdfreader = null;
-        if(type.equals("file")){
-          xfdfreader = new XfdfReader(xfdf);
-        }else{
-          xfdfreader = new XfdfReader(xfdf.getBytes());
-        }
-        this.form.setFields(xfdfreader);
-      }catch(Exception e){e.printStackTrace();}
+
+    public void merge(String xfdf, String type)
+      throws IOException, DocumentException {
+      XfdfReader xfdfreader = null;
+      if(type.equals("file")){
+        xfdfreader = new XfdfReader(xfdf);
+      }else{
+        xfdfreader = new XfdfReader(xfdf.getBytes());
+      }
+      this.form.setFields(xfdfreader);
     }
 //
 //    # Set a button field defined by key and replaces with an image.

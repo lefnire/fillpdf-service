@@ -1,9 +1,12 @@
 package com.ocdevel;
 
-import java.io.IOException;
-import com.itextpdf.text.DocumentException;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 import com.itextpdf.text.pdf.AcroFields;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.XfdfReader;
@@ -11,6 +14,9 @@ import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.codec.Base64;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.*;
+import java.net.MalformedURLException;
 
 /**
  *
@@ -73,25 +79,28 @@ public class FillpdfService{
     catch(DocumentException d){ d.printStackTrace();}
   }
 
-//
-//    # Set a button field defined by key and replaces with an image.
-//    def image(key, image_path)
-//      # Idea from here http://itext.ugent.be/library/question.php?id=31
-//      # Thanks Bruno for letting me know about it.
-//      img = Image.getInstance(image_path)
-//      img_field = @form.getFieldPositions(key.to_s)
-//
-//      rect = Rectangle.new(img_field[1], img_field[2], img_field[3], img_field[4])
-//      img.scaleToFit(rect.width, rect.height)
-//      img.setAbsolutePosition(
-//        img_field[1] + (rect.width - img.scaledWidth) / 2,
-//        img_field[2] + (rect.height - img.scaledHeight) /2
-//      )
-//
-//      cb = @stamp.getOverContent(img_field[0].to_i)
-//      cb.addImage(img)
-//    end
-//
+
+    /**
+     * Set a button field defined by key and replaces with an image.
+     */
+    public void image(String key, String image_path)
+      throws BadElementException, MalformedURLException, IOException{
+      // Idea from here http://itext.ugent.be/library/question.php?id=31
+      // Thanks Bruno for letting me know about it.
+      Image img = Image.getInstance(image_path);
+      float[] img_field = this.form.getFieldPositions(key);
+
+      Rectangle rect = new Rectangle(img_field[1], img_field[2], img_field[3], img_field[4]);
+      img.scaleToFit(rect.getWidth(), rect.getHeight());
+      img.setAbsolutePosition( 
+        (img_field[1] + (rect.getWidth()) - img.getScaledWidth()) / 2),
+        (img_field[2] + (rect.getHeight() - img.getScaledHeight()) /2)
+      );
+
+      cb = @stamp.getOverContent(img_field[0].to_i)
+      cb.addImage(img)
+    }
+
     /**
      * Takes the PDF output and sends as a string.  Basically it's sole
      * purpose is to be used with send_data in rails.
@@ -137,54 +146,59 @@ public class FillpdfService{
     }
 
 
+    public ArrayList<HashMap> parse(){
+        ArrayList<HashMap> arr = new ArrayList();
+        // Loop over the fields and get info about them
+        Set<String> fields = this.form.getFields().keySet();
+        for (String key : fields) {
+            String type = null;
+            switch (this.form.getFieldType(key)) {
+            case AcroFields.FIELD_TYPE_CHECKBOX:
+                type = "Checkbox";
+                break;
+            case AcroFields.FIELD_TYPE_COMBO:
+                type = "Combobox";
+                break;
+            case AcroFields.FIELD_TYPE_LIST:
+                type = "List";
+                break;
+            case AcroFields.FIELD_TYPE_NONE:
+                type = "None";
+                break;
+            case AcroFields.FIELD_TYPE_PUSHBUTTON:
+                type = "Pushbutton";
+                break;
+            case AcroFields.FIELD_TYPE_RADIOBUTTON:
+                type = "Radiobutton";
+                break;
+            case AcroFields.FIELD_TYPE_SIGNATURE:
+                type = "Signature";
+                break;
+            case AcroFields.FIELD_TYPE_TEXT:
+                type = "Text";
+                break;
+            default:
+                type = "?";
+            }
+            HashMap map = new HashMap();
+            map.put("name", key);
+            map.put("type", type);
+            map.put("value", this.form.getField(key));
+            arr.add(map);
+        }
+        return arr;
+    }
 
-
-
-//    def parse
-//      arr = []
-//      fields = @form.getFields()
-//      fs = @treemap.new(fields)
-//      k = fs.keySet()  # @k gets sorted list of field names
-//
-//      it = k.iterator()
-//      while it.hasNext()
-//          # see http://www.ruby-forum.com/topic/187753
-//          key = it.next().to_string
-//
-//          case @form.getFieldType(key)
-//            when @acrofields.FIELD_TYPE_CHECKBOX:
-//                type="Checkbox"
-//            when @acrofields.FIELD_TYPE_COMBO:
-//                type="Combobox"
-//            when @acrofields.FIELD_TYPE_LIST:
-//                type="List"
-//            when @acrofields.FIELD_TYPE_NONE:
-//                type="None"
-//            when @acrofields.FIELD_TYPE_PUSHBUTTON:
-//                type="Pushbutton"
-//            when @acrofields.FIELD_TYPE_RADIOBUTTON:
-//                type="Radiobutton"
-//            when @acrofields.FIELD_TYPE_SIGNATURE:
-//                type="Signature"
-//            when @acrofields.FIELD_TYPE_TEXT:
-//                type="Text"
-//            else
-//                type="?"
-//          end
-//          arr << {'name'=>key, 'type'=>type, 'value'=>form.getField(key)}
-//      end
-//      arr
-//    end
-//
-//    def parse_as_xfdf
-//      xml = "<fields>"
-//      arr = parse()
-//      arr.each do |field|
-//#        xml += "\n<field name='#{key}' type='#{form.getFieldType(key)}' value='#{form.getField(key)}'/>"
-//        xml += "\n<field name='#{field['name']}' type='#{field['type']}' value='#{field['value']}'/>"
-//      end
-//      xml += "</fields>"
-//    end
+    public String parse_as_xfdf(){
+      String xml = "<fields>";
+      ArrayList<HashMap> arr = this.parse();
+      for (HashMap map : arr) {
+        //xml += "\n<field name='#{key}' type='#{form.getFieldType(key)}' value='#{form.getField(key)}'/>"
+        xml += "\n<field name='" + map.get("name") + "' type='" + map.get("type") + "' value='" + map.get("value") + "'/>";
+      }
+      xml += "\n</fields>";
+      return xml;
+    }
 
     public void merge(String xfdf, String type)
       throws IOException, DocumentException {

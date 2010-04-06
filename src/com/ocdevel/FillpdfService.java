@@ -49,35 +49,33 @@ public class FillpdfService{
   PdfStamper stamp            = null;
   AcroFields form             = null;
 
-  public static void main(String [ ] args){
+//  public static void main(String [ ] args){
+//
+//    FillpdfService svc = new FillpdfService("/Users/lefnire/test_template.pdf", "file");
+//    //svc.text("Date of Birth", "test");
+//    svc.text("form1[0].#subform[0].text_field01[0]", "test");
+////    System.out.println(svc.toString());
+//    svc.saveAs("/Users/lefnire/Downloads/test.pdf");
+//  }
 
-    FillpdfService svc = new FillpdfService("/Users/lefnire/test_template.pdf", "file");
-    //svc.text("Date of Birth", "test");
-    svc.text("form1[0].#subform[0].text_field01[0]", "test");
-//    System.out.println(svc.toString());
-    svc.saveAs("/Users/lefnire/Downloads/test.pdf");
-  }
 
-
-
-  public FillpdfService(String pdf, String type){
+  public FillpdfService(String pdf, String type)
+    throws IOException, DocumentException{
     PdfReader reader = null;
 
     /*NOTE I'd rather use a ByteArrayOutputStream.  However I
       couldn't get it working.  Patches welcome. */
     //@tmp_path = File.join(Dir::tmpdir,  'pdf-stamper-' + rand(10000).to_s + '.pdf')
-    try{
-      if(type.equals("file")){
-        reader = new PdfReader(pdf);
-      }else{
-        reader = new PdfReader(Base64.decode(pdf));
-      }
-      this.baos = new ByteArrayOutputStream();
-      this.stamp = new PdfStamper(reader, this.baos); //FileOutputStream.new(@tmp_path))
-      this.form = this.stamp.getAcroFields();
+    
+    if(type.equals("file")){
+      reader = new PdfReader(pdf);
+    }else{
+      reader = new PdfReader(Base64.decode(pdf));
     }
-    catch(IOException e){ e.printStackTrace();}
-    catch(DocumentException d){ d.printStackTrace();}
+    this.baos = new ByteArrayOutputStream();
+    this.stamp = new PdfStamper(reader, this.baos); //FileOutputStream.new(@tmp_path))
+    this.form = this.stamp.getAcroFields();
+    
   }
 
 
@@ -85,8 +83,8 @@ public class FillpdfService{
      * Takes the PDF output and sends as a string.  Basically it's sole
      * purpose is to be used with send_data in rails.
      */
-    @Override
-    public String toString(){
+    public String toByteArray()
+      throws IOException, DocumentException{
       this.fill();
       return Base64.encodeBytes(baos.toByteArray());
     }
@@ -94,35 +92,25 @@ public class FillpdfService{
     /**
      * Set a textfield defined by key and text to value.
      */
-    public void text(String key, String value){
-      try{
-        this.form.setField(key, value); // Value must be a string or itext will error.
-      }
-      catch(IOException e){e.printStackTrace();}
-      catch(DocumentException d){d.printStackTrace();}
+    public void text(String key, String value)
+      throws IOException, DocumentException{
+      this.form.setField(key, value); // Value must be a string or itext will error.
     }
 
     // Saves the PDF into a file defined by path given.
-    public void saveAs(String file){
-      try{
-        this.fill();
-        FileOutputStream fout = new FileOutputStream(file);
-        this.baos.writeTo(fout);
-        fout.close();
-      }
-      catch(IOException e){e.printStackTrace();}
-
+    public void saveAs(String file)
+      throws IOException, DocumentException{
+      this.fill();
+      FileOutputStream fout = new FileOutputStream(file);
+      this.baos.writeTo(fout);
+      fout.close();
     }
 
-    private void fill(){
-      try{
-        this.stamp.setFormFlattening(true);
-        this.stamp.close();
-        this.baos.flush();
-      }
-      catch(IOException e){e.printStackTrace();}
-      catch(DocumentException d){d.printStackTrace();}
-
+    private void fill()
+      throws IOException, DocumentException{
+      this.stamp.setFormFlattening(true);
+      this.stamp.close();
+      this.baos.flush();
     }
 
 

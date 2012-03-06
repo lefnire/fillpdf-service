@@ -22,6 +22,7 @@ import com.itextpdf.text.pdf.PdfContentByte;
 /**
  *
  * @author renelle
+ * @author wizonesolutions
  */
 
 /**
@@ -89,6 +90,11 @@ public class FillpdfService{
       return Base64.encodeBytes(baos.toByteArray());
     }
 
+    public String toByteArray(boolean flatten) {
+      this.stamp.setFormFlattening(flatten);
+      return Base64.encodeBytes(baos.toByteArray());
+    }
+    
     /**
      * Set a textfield defined by key and text to value.
      */

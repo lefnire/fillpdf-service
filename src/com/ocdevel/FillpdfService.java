@@ -86,16 +86,16 @@ public class FillpdfService{
      */
     public String toByteArray()
       throws IOException, DocumentException{
+      this.stamp.setFormFlattening(true);
       this.fill();
       return Base64.encodeBytes(baos.toByteArray());
     }
 
-    public String toByteArray(String flatten)
+    public String toByteArrayUnflattened()
       throws IOException, DocumentException{
-      if (flatten.equals('false')) {
-        this.stamp.setFormFlattening(false);
-      }
-      return this.toByteArray();
+      this.stamp.setFormFlattening(false);
+      this.fill();
+      return Base64.encodeBytes(baos.toByteArray());
     }
     
     /**
@@ -117,7 +117,6 @@ public class FillpdfService{
 
     private void fill()
       throws IOException, DocumentException{
-      this.stamp.setFormFlattening(true);
       this.stamp.close();
       this.baos.flush();
     }

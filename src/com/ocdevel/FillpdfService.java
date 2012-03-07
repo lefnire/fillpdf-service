@@ -90,9 +90,12 @@ public class FillpdfService{
       return Base64.encodeBytes(baos.toByteArray());
     }
 
-    public String toByteArray(boolean flatten) {
-      this.stamp.setFormFlattening(flatten);
-      return Base64.encodeBytes(baos.toByteArray());
+    public String toByteArray(String flatten)
+      throws IOException, DocumentException{
+      if (flatten.equals('false')) {
+        this.stamp.setFormFlattening(false);
+      }
+      return this.toByteArray();
     }
     
     /**
